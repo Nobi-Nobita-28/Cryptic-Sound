@@ -1,0 +1,29 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="com.example.flames" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
+    <name>Flames</name>
+    <description>Sample Apache Cordova App</description>
+    <author email="dev@cordova.apache.org" href="https://cordova.apache.org">
+        Apache Cordova Team
+    </author>
+    <content src="index.html" />
+    <allow-intent href="http://*/*" />
+    <allow-intent href="https://*/*" />
+
+    <platform name="android">
+        <!-- Ensure all permissions are correctly defined -->
+        <!-- Path to icon should point to a valid file, e.g., "res/mipmap-mdpi/icon.png" -->
+        <!-- <icon src="res/mipmap-mdpi/Flames.jpg" /> -->
+        <icon src="Flames.jpg" />
+
+        <!-- Permissions block -->
+        <uses-permission android:name="android.permission.CAMERA" />
+        <uses-permission android:name="android.permission.RECORD_AUDIO" />
+        <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+        <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+
+        <!-- Plugins and preferences -->
+        <plugin name="cordova-plugin-camera" spec="^5.0.3" />
+        <preference name="AndroidPersistentFileLocation" value="Internal" />
+        <allow-intent href="market:*" />
+    </platform>
+</widget>

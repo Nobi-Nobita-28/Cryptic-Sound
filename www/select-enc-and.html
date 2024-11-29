@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Encode Audio into Existing Image</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #ff9966, #ff5e62);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            color: #ffffff;
+            margin: 0;
+            padding: 0 10px;
+            box-sizing: border-box;
+        }
+
+        .container {
+            max-width: 400px;
+            width: 100%;
+            padding: 2rem;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            height: 100%;
+            padding-bottom: 4rem;
+            padding-right: 3rem;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+        }
+
+        input[type="file"] {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 1rem;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+            border: 2px solid #ffffff;
+            border-radius: 8px;
+        }
+
+        input[type="file"]:hover {
+            border-color: #ff5e62;
+        }
+
+        button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #ff5e62;
+            background: #ffffff;
+            border: none;
+            border-radius: 25px;
+            margin-top: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        button:hover {
+            background: #ff5e62;
+            color: #ffffff;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+            transform: scale(1.05);
+        }
+
+        #downloadLink {
+            display: none;
+            text-decoration: none;
+            color: #ffffff;
+            background: #ff5e62;
+            padding: 10px 20px;
+            border-radius: 25px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            top: 30px;
+        }
+
+        #downloadLink:hover {
+            background: #ffffff;
+            color: #ff5e62;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        #videoPreview,
+        #captureCanvas {
+            display: none;
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin-top: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Responsive adjustments for smaller screens */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            button {
+                font-size: 1rem;
+                padding: 10px;
+            }
+
+            input[type="file"] {
+                font-size: 0.9rem;
+                padding: 8px;
+            }
+
+            .container {
+                padding: 1.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.3rem;
+            }
+
+            button {
+                font-size: 0.9rem;
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Encode Audio into Image</h1>
+        <input type="file" id="audioInput" accept="audio/*">
+        <input type="file" id="imageInput" accept="image/*">
+        <button id="takePhotoButton">Take Photo</button>
+        <button id="captureButton" style="display: none;">Capture</button>
+        <button id="encodeAudioButton">Encode Audio</button>
+        <a id="downloadLink" style="display: none;">Download Encoded Image</a>
+        <video id="videoPreview" autoplay></video>
+        <canvas id="captureCanvas" width="1500" height="1200"></canvas>
+    </div>
+
+    <script>
+        let capturedImage = null;
+        let isCordova = typeof window.cordova !== "undefined"; // Detect Cordova environment
+
+        // Take Photo with Cordova Camera Plugin or Browser Media API
+        document.getElementById('takePhotoButton').addEventListener('click', async () => {
+            if (isCordova) {
+                // Use Cordova Camera Plugin
+                navigator.camera.getPicture(onCordovaSuccess, onCordovaFail, {
+                    quality: 50,
+                    destinationType: Camera.DestinationType.FILE_URI
+                });
+
+                function onCordovaSuccess(imageURI) {
+                    const img = new Image();
+                    img.src = imageURI;
+                    img.onload = () => {
+                        const canvas = document.getElementById('captureCanvas');
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        canvas.toBlob(blob => {
+                            capturedImage = new File([blob], "captured_image.png", { type: "image/png" });
+                            const dataTransfer = new DataTransfer();
+                            dataTransfer.items.add(capturedImage);
+                            document.getElementById('imageInput').files = dataTransfer.files;
+                        });
+                    };
+                }
+
+                function onCordovaFail(message) {
+                    alert('Camera failed because: ' + message);
+                }
+            } else {
+                // Use Browser Media API
+                const video = document.getElementById('videoPreview');
+                video.style.display = 'block';
+                document.getElementById('captureButton').style.display = 'inline';
+
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 1500, height: 1200 } });
+                    video.srcObject = stream;
+                } catch (err) {
+                    alert("Camera access denied or not supported.");
+                    return;
+                }
+            }
+        });
+
+        document.getElementById('captureButton').addEventListener('click', () => {
+            const video = document.getElementById('videoPreview');
+            const canvas = document.getElementById('captureCanvas');
+            const ctx = canvas.getContext('2d');
+
+            // Capture the image from the video stream
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Stop the video stream
+            const stream = video.srcObject;
+            const tracks = stream.getTracks();
+            tracks.forEach(track => track.stop());
+            video.style.display = 'none';
+            document.getElementById('captureButton').style.display = 'none';
+
+            // Convert the canvas to a Blob and set it as the file input
+            canvas.toBlob(blob => {
+                capturedImage = new File([blob], "captured_image.png", { type: "image/png" });
+
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(capturedImage);
+                document.getElementById('imageInput').files = dataTransfer.files;
+            });
+        });
+
+        // Encode Audio into Image
+        document.getElementById('encodeAudioButton').addEventListener('click', async () => {
+            const audioFile = document.getElementById('audioInput').files[0];
+            const imageFile = document.getElementById('imageInput').files[0];
+
+            if (!audioFile || !imageFile) {
+                alert("Please select an audio file and capture/select an image.");
+                return;
+            }
+
+            const audioArrayBuffer = await audioFile.arrayBuffer();
+            const audioData = new Uint8Array(audioArrayBuffer);
+
+            const img = new Image();
+            img.src = URL.createObjectURL(imageFile);
+
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+
+                const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+                const maxAudioSize = Math.floor((imgData.data.length / 8) * 3);
+                if (audioData.length > maxAudioSize) {
+                    alert("Audio file is too large to encode in this image.");
+                    return;
+                }
+
+                encodeAudioIntoImageLSB(imgData.data, audioData);
+
+                ctx.putImageData(imgData, 0, 0);
+                canvas.toBlob((blob) => {
+                    if (isCordova) {
+                        // Save file using Cordova File plugin
+                        window.resolveLocalFileSystemURL(cordova.file.dataDirectory, function (dir) {
+                            dir.getFile("encoded_image.png", { create: true }, function (file) {
+                                file.createWriter(function (fileWriter) {
+                                    fileWriter.write(blob);
+                                    alert("Image saved to device storage.");
+                                }, function (error) {
+                                    console.error("Error writing file: ", error);
+                                    alert("Failed to save image.");
+                                });
+                            });
+                        });
+                    } else {
+                        // Browser Download Link
+                        const downloadLink = document.getElementById('downloadLink');
+                        downloadLink.href = URL.createObjectURL(blob);
+                        downloadLink.download = 'encoded_image.png';
+                        downloadLink.style.display = 'inline';
+                        downloadLink.textContent = 'Download Encoded Image';
+                    }
+                }, 'image/png');
+            };
+        });
+
+        // Function to Encode Audio into Image using LSB
+        function encodeAudioIntoImageLSB(imageData, audioData) {
+            let audioIndex = 0;
+            let bitIndex = 0;
+
+            for (let i = 32; audioIndex < audioData.length && i < imageData.length; i++) {
+                const bit = (audioData[audioIndex] >> (7 - bitIndex)) & 1;
+                imageData[i] = (imageData[i] & 0xFE) | bit;
+
+                bitIndex++;
+                if (bitIndex === 8) {
+                    audioIndex++;
+                    bitIndex = 0;
+                }
+            }
+        }
+    </script>
+
+
+</body>
+
+</html>
